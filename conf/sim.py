@@ -36,6 +36,13 @@ def gen_inet_sequpdate_args(max_session, start_ue_ip):
     return kwargs
 
 
+def gen_inet_sequpdate_ul_args(max_session, start_ue_ip):
+    kwargs = {"fields": [
+        {'offset': 26, 'size': 4, 'min': ip2long(start_ue_ip),
+         'max': ip2long(start_ue_ip)+max_session-1}]}
+    return kwargs
+
+
 def gen_gtpu_packet(
     size,
     src_mac,
@@ -156,4 +163,10 @@ def gen_gtpu_sequpdate_args(max_session, start_ue_ip, ue_ip_offset, start_teid):
             },
         ]
     }
+    return kwargs
+
+def gen_gtpu_sequpdate_ul_args(max_session, start_teid):
+    kwargs = {"fields": [
+        {'offset': 46, 'size': 4, 'min': start_teid,
+         'max': start_teid+max_session-1}]}
     return kwargs
