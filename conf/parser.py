@@ -68,6 +68,8 @@ class Parser:
         except ValueError:
             print(
                 'Invalid value for dl_rate. Disabling traffic generation in DL.')
+        except KeyError:
+            print('dl_rate value not set. Ignoring parameter.')
 
         # Number of packets per second to be created in UL
         try:
@@ -75,6 +77,8 @@ class Parser:
         except ValueError:
             print(
                 'Invalid value for ul_rate. Disabling traffic generation in UL.')
+        except KeyError:
+            print('ul_rate value not set. Ignoring parameter.')
 
         # Maximum number of flows to manage ip4 frags for re-assembly
         try:
