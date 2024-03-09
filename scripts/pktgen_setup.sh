@@ -19,7 +19,7 @@ mode="af_packet"
 # Gateway interface(s)
 #
 # In the order of ("s1u" "sgi")
-ifaces=("ens801f0" "ens801f1")
+ifaces=("ens785f0" "ens785f1")
 
 # Static IP addresses of gateway interface(s) in cidr format
 #
