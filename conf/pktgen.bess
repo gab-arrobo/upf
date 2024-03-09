@@ -15,11 +15,11 @@ port.setup_globals()
 # ====================================================
 
 interfaces = ["access", "core"]
-parser = Parser('conf/pktgen.json')
+parser = Parser('conf/pktgen.jsonc')
 parser.parse(interfaces)
 
 if parser.mode == 'sim':
-    print('Please update pktgen.json and pktgen_setup.sh accordingly')
+    print('Please update pktgen.jsonc and pktgen_setup.sh accordingly')
     sys.exit('This file is NOT meant to work in simulation mode')
 
 # Catch core & access MAC/IPv4 addresses
