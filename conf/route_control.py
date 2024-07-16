@@ -604,7 +604,7 @@ class RouteController:
         return self._module_gate_count_cache[module_name]
 
     def _netlink_event_listener(
-        self, ndb: NDB, netlink_message: dict
+        self, netlink_message: dict
     ) -> None:
         """Listens for netlink events and handles them.
 
@@ -612,7 +612,7 @@ class RouteController:
             netlink_message (dict): The netlink message.
         """
         try:
-            event = netlink_message['event']
+            event = netlink_message.get('event')
         except Exception:
             logger.exception("Error parsing netlink message")
             return

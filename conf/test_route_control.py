@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 sys.modules["pybess.bess"] = MagicMock()
 
-from conf.route_control import (NeighborEntry, RouteController, RouteEntry,
+from conf.route_control import (RouteController, RouteEntry,
                                 fetch_mac, mac_to_hex, mac_to_int,
                                 validate_ipv4)
 
@@ -367,7 +367,7 @@ class TestRouteController(unittest.TestCase):
             "event": "RTM_NEWROUTE",
         }
         self.route_controller._netlink_event_listener(
-            self.ndb, example_route_entry
+            example_route_entry
         )
         mock_add_new_route_entry.assert_called()
 
@@ -443,7 +443,7 @@ class TestRouteController(unittest.TestCase):
             "event": "RTM_DELROUTE",
         }
         self.route_controller._netlink_event_listener(
-            self.ndb, example_route_entry
+            example_route_entry
         )
         mock_delete_route_entry.assert_called()
 
@@ -481,6 +481,6 @@ class TestRouteController(unittest.TestCase):
         self, mock_add_unresolved_new_neighbor
     ):
         self.route_controller._netlink_event_listener(
-            self.ndb, "new neighbour message"
+            {"event": "RTM_NEWNEIGH"}
         )
         mock_add_unresolved_new_neighbor.assert_called()

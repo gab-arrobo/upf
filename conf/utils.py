@@ -6,6 +6,7 @@ import os
 import socket
 import struct
 import sys
+from typing import Optional
 
 import iptools
 from jsoncomment import JsonComment
@@ -62,30 +63,39 @@ def get_env(varname, default=None):
             exit(1, "Empty env var {}".format(varname))
 
 
-def ips_by_interface(name):
+def ips_by_interface(name) -> list:
     ndb = NDB()
-    return [address["local"] for address in ndb.interfaces[name].ipaddr if address["family"] == AF_INET]
+    interfaces = ndb.interfaces
+    if iface_record := interfaces.get(name):
+        for address in iface_record.ipaddr:
+            if address["family"] == AF_INET:
+                return [address["local"]]
+    return []
 
 
 def atoh(ip):
     return socket.inet_aton(ip)
 
 
-def alias_by_interface(name):
+def alias_by_interface(name) -> Optional[str]:
     ndb = NDB()
-    return ndb.interfaces[name]["ifalias"]
+    interfaces = ndb.interfaces
+    if iface_record := interfaces.get(name):
+        return iface_record["ifalias"]
 
 
-def mac_by_interface(name):
+def mac_by_interface(name) -> Optional[str]:
     ndb = NDB()
-    return ndb.interfaces[name]["address"]
+    interfaces = ndb.interfaces
+    if iface_record := interfaces.get(name):
+        return iface_record["address"]
 
 
 def mac2hex(mac):
     return int(mac.replace(":", ""), 16)
 
 
-def peer_by_interface(name):
+def peer_by_interface(name) -> str:
     ndb = NDB()
     try:
         peer_idx = ndb.interfaces[name]["link"]
