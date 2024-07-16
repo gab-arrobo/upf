@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 sys.modules["pybess.bess"] = MagicMock()
 
-from conf.route_control import (NeighborEntry, RouteController, RouteEntry,
+from conf.route_control import (RouteController, RouteEntry,
                                 fetch_mac, mac_to_hex, mac_to_int,
                                 validate_ipv4)
 
@@ -74,7 +74,7 @@ class TestUtilityFunctions(unittest.TestCase):
         ndb.neighbours.dump.return_value = [kwargs]
         self.assertEqual(fetch_mac(ndb, "192.168.1.1"), "00:1a:2b:3c:4d:5e")
 
-    def test_given_unkonw_destination_when_fetch_mac_then_returns_none(self):
+    def test_given_unknown_destination_when_fetch_mac_then_returns_none(self):
         ndb = Mock()
         kwargs = {
             "ifindex": 1,
@@ -249,7 +249,7 @@ class TestRouteController(unittest.TestCase):
         self.mock_bess_controller.add_route_to_module.assert_called_once()
 
     @patch("conf.route_control.send_ping")
-    def test_given_valid_new_route_when_add_new_route_entry_and_mac_known_and_neighbor_not_known_then_update_module_is_created_and_modules_are_linked(
+    def test_given_valid_new_route_when_add_new_route_entry_and_mac_known_and_neighbor_not_known_then_update_module_is_created_and_modules_are_linked(  # noqa: E501
         self, _
     ):
         kwargs = {
@@ -367,7 +367,7 @@ class TestRouteController(unittest.TestCase):
             "event": "RTM_NEWROUTE",
         }
         self.route_controller._netlink_event_listener(
-            self.ndb, example_route_entry
+            example_route_entry
         )
         mock_add_new_route_entry.assert_called()
 
@@ -443,7 +443,7 @@ class TestRouteController(unittest.TestCase):
             "event": "RTM_DELROUTE",
         }
         self.route_controller._netlink_event_listener(
-            self.ndb, example_route_entry
+            example_route_entry
         )
         mock_delete_route_entry.assert_called()
 
@@ -481,6 +481,6 @@ class TestRouteController(unittest.TestCase):
         self, mock_add_unresolved_new_neighbor
     ):
         self.route_controller._netlink_event_listener(
-            self.ndb, "new neighbour message"
+            {"event": "RTM_NEWNEIGH"}
         )
         mock_add_unresolved_new_neighbor.assert_called()
