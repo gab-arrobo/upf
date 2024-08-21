@@ -15,6 +15,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
@@ -25,7 +26,7 @@ import (
 // MustRunDockerCommandAttach attaches to a running Docker container and executes a cmd.
 // It should be used to spawn a new pfcpiface process inside and redirect its stdout/stderr to `docker logs`.
 // This is equivalent to `docker attach` CLI command.
-func MustRunDockerCommandAttach(container string, cmd string) {
+func MustRunDockerCommandAttach(containerName string, cmd string) {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -33,7 +34,7 @@ func MustRunDockerCommandAttach(container string, cmd string) {
 	}
 	defer cli.Close()
 
-	waiter, err := cli.ContainerAttach(ctx, container, types.ContainerAttachOptions{
+	waiter, err := cli.ContainerAttach(ctx, containerName, container.AttachOptions{
 		Stderr: true,
 		Stdout: true,
 		Stdin:  true,
@@ -159,7 +160,7 @@ func WaitForContainerRunning(name string) error {
 // - exposedPorts specifies the list of L4 ports to expose. The format should be port_no/proto (e.g., 8080/tcp). It's optional.
 // - mnt defines the mount paths. The format should be `<local_path>:<target_path>`. It's optional.
 // - net defines a Docker network for a container (optional).
-func MustRunDockerContainer(name, image, cmd string, exposedPorts []string, mnt string, net string) {
+func MustRunDockerContainer(name, image, cmd string, hostIp string, exposedPorts []string, mnt string, net string) {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -199,7 +200,7 @@ func MustRunDockerContainer(name, image, cmd string, exposedPorts []string, mnt 
 	for _, port := range exposedPorts {
 		baseCfg.ExposedPorts[nat.Port(port)] = struct{}{}
 		hostCfg.PortBindings[nat.Port(port)] = []nat.PortBinding{{
-			HostIP:   "127.0.0.1",
+			HostIP:   hostIp,
 			HostPort: port,
 		}}
 	}
@@ -217,7 +218,7 @@ func MustRunDockerContainer(name, image, cmd string, exposedPorts []string, mnt 
 		panic(err)
 	}
 
-	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+	if err := cli.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
 		panic(err)
 	}
 
@@ -240,7 +241,7 @@ func MustStopDockerContainer(name string) {
 		logrus.Fatalf("Failed to stop Docker container %s: %v", name, err)
 	}
 
-	err = cli.ContainerRemove(ctx, name, types.ContainerRemoveOptions{
+	err = cli.ContainerRemove(ctx, name, container.RemoveOptions{
 		Force: true,
 	})
 	if err != nil {
@@ -248,7 +249,7 @@ func MustStopDockerContainer(name string) {
 	}
 }
 
-func MustPullDockerImage(image string) {
+func MustPullDockerImage(imageName string) {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -256,7 +257,7 @@ func MustPullDockerImage(image string) {
 	}
 	defer cli.Close()
 
-	resp, err := cli.ImagePull(ctx, image, types.ImagePullOptions{})
+	resp, err := cli.ImagePull(ctx, imageName, image.PullOptions{})
 	if err != nil {
 		panic(err)
 	}
