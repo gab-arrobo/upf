@@ -14,6 +14,8 @@ import (
 var errFlowDescAbsent = errors.New("flow description not present")
 var errDatapathDown = errors.New("datapath down")
 var errReqRejected = errors.New("request rejected")
+var errNodeIDMissing = errors.New("mandatory NodeID IE missing")
+var errRecoveryTimeStampMissing = errors.New("mandatory Recovery Time Stamp IE missing")
 
 func (pConn *PFCPConn) sendAssociationRequest() {
 	// Build request message
@@ -107,6 +109,8 @@ func (pConn *PFCPConn) associationIEs() []*ie.IE {
 		setUeipFeature(features...)
 	}
 
+	setFTUPFeature(features...)
+
 	if upf.enableEndMarker {
 		setEndMarkerFeature(features...)
 	}
@@ -133,19 +137,35 @@ func (pConn *PFCPConn) handleAssociationSetupRequest(msg message.Message) (messa
 		return nil, errUnmarshal(errMsgUnexpectedType)
 	}
 
+	// Build response message
+	asres := message.NewAssociationSetupResponse(asreq.SequenceNumber,
+		pConn.associationIEs()...)
+
+	if asreq.NodeID == nil {
+		// Reject requests that omit the mandatory Node ID to avoid nil deref on malformed PFCP messages.
+		asres.Cause = ie.NewCause(ie.CauseMandatoryIEMissing)
+		logger.PfcpLog.Warnln("association Setup Request without NodeID from", addr)
+		return asres, errProcess(errNodeIDMissing)
+	}
+
 	nodeID, err := asreq.NodeID.NodeID()
 	if err != nil {
-		return nil, errUnmarshal(err)
+		asres.Cause = ie.NewCause(ie.CauseMandatoryIEIncorrect)
+		return asres, errUnmarshal(err)
+	}
+
+	if asreq.RecoveryTimeStamp == nil {
+		// Reject requests missing Recovery Time Stamp to avoid nil deref on malformed PFCP messages.
+		asres.Cause = ie.NewCause(ie.CauseMandatoryIEMissing)
+		logger.PfcpLog.Warnln("association Setup Request without Recovery Time Stamp from", addr)
+		return asres, errProcess(errRecoveryTimeStampMissing)
 	}
 
 	ts, err := asreq.RecoveryTimeStamp.RecoveryTimeStamp()
 	if err != nil {
-		return nil, errUnmarshal(err)
+		asres.Cause = ie.NewCause(ie.CauseMandatoryIEIncorrect)
+		return asres, errUnmarshal(err)
 	}
-
-	// Build response message
-	asres := message.NewAssociationSetupResponse(asreq.SequenceNumber,
-		pConn.associationIEs()...)
 
 	if !upf.isConnected() {
 		asres.Cause = ie.NewCause(ie.CauseRequestRejected)
@@ -191,9 +211,19 @@ func (pConn *PFCPConn) handleAssociationSetupResponse(msg message.Message) error
 		return errReqRejected
 	}
 
+	if asres.NodeID == nil {
+		// Abort association if peer omits Node ID, matching request-side validation.
+		return errUnmarshal(errNodeIDMissing)
+	}
+
 	nodeID, err := asres.NodeID.NodeID()
 	if err != nil {
 		return errUnmarshal(err)
+	}
+
+	if asres.RecoveryTimeStamp == nil {
+		// Abort association if peer omits Recovery Time Stamp to keep state consistent with request handling.
+		return errUnmarshal(errRecoveryTimeStampMissing)
 	}
 
 	ts, err := asres.RecoveryTimeStamp.RecoveryTimeStamp()

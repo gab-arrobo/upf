@@ -6,8 +6,7 @@ Copyright 2019 Intel Corporation
 # UPF
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/omec-project/upf)](https://goreportcard.com/report/github.com/omec-project/upf)
-
-[![Build Status](https://jenkins.onosproject.org/buildStatus/icon?job=bess-upf-linerate-tests&subject=Linerate+Tests)](https://jenkins.onosproject.org/job/bess-upf-linerate-tests/)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/omec-project/upf/badge)](https://scorecard.dev/viewer/?uri=github.com/omec-project/upf)
 
 This project implements a 4G/5G User Plane Function (UPF) compliant with 3GPP
 TS23.501. It follows the 3GPP Control and User Plane Separation (CUPS)
@@ -35,19 +34,14 @@ The UPF implementation consists of two layers:
 - **Datapath:** responsible for the actual data plane packet processing.
 
 The PFCP Agent implements datapath plugins that translate
-  PFCP messages to datapath-specific configurations. We currently support two
-  datapath implementations:
+  PFCP messages to datapath-specific configurations. We currently support below
+  datapath implementation:
   - [BESS](https://github.com/omec-project/bess): a software-based datapath
     built on top of the Berkeley Extensible Software Switch (BESS) framework.
     For more details, please see the ONFConnect 2019 [talk](https://www.youtube.com/watch?v=fqJGWcwcOxE)
     and demo videos [here](https://www.youtube.com/watch?v=KxK64jalKHw) and
     [here](https://youtu.be/rWnZuJeUWi4).
     > Note: The source code for the BESS-based datapath is in https://github.com/omec-project/bess
-  - [UP4](https://github.com/omec-project/up4): an implementation leveraging
-    ONOS and P4-programmable switches to realize a hardware-based datapath.
-
-The combination of PFCP Agent and UP4 is usually referred to as P4-UPF. While
-BESS-UPF denotes the combination of PFCP Agent and the BESS datapath.
 
 PFCP Agent internally abstracts different datapaths using a common API, while
 the different plug-ins can use specific southbound protocols to communicate with
@@ -122,22 +116,12 @@ registry: [upf-epc-bess](https://hub.docker.com/r/omecproject/upf-epc-bess),
 * Support for DPDK, CNDP, AF_PACKET and AF_XDP modes
   - BESS uses DPDK 22.11.4
 
-### P4-UPF
-P4-UPF implements a core set of features capable of supporting requirements for
-a broad range of enterprise use cases.
-
-See the [ONF's blog post](https://opennetworking.org/news-and-events/blog/using-p4-and-programmable-switches-to-implement-a-4g-5g-upf-in-aether/)
-for an overview of P4-UPF. Additionally, refer to the [SD-Fabric documentation](https://docs.sd-fabric.org/master/advanced/p4-upf.html)
-for the detailed feature set.
-
 ## Getting started
 
 ### Installation
 
 Please see installation document [here](docs/INSTALL.md) for details on how to
 set up the PFCP Agent with BESS-UPF.
-
-To install the PFCP Agent with UP4 please follow the [SD-Fabric documentation](https://docs.sd-fabric.org/master/index.html).
 
 ### Configuration
 
@@ -170,17 +154,6 @@ BESS-UPF in the `native` mode use:
 make test-bess-integration-native
 ```
 
-The `docker` mode uses fully containerized environment and runs all components
-(the PFCP Agent and a datapath mock) as Docker containers. It ensures the
-correct behavior of the package produced by the UPF project. To run E2E
-integration tests for UP4 in the `docker` mode use:
-
-```
-make test-up4-integration-docker
-```
-
-> NOTE: The `docker` mode for BESS-UPF and the `native` mode for UP4 are not implemented yet.
-
 **PTF tests for BESS-UPF** verify the BESS-based implementation of the UPF
 datapath (data plane). Details to run PTF tests for BESS-UPF can be found [here](./ptf/README.md).
 
@@ -191,17 +164,16 @@ integrate a new UPF datapath or fix bugs!
 
 Before contributing, please follow these guidelines:
 
-* Check out [open issues](https://github.com/omec-project/upf/issues).
 * Check out [the developer guide](./docs/developer-guide.md).
 * We follow the best practices described in https://google.github.io/eng-practices/review/developer/.
   Get familiar with them before submitting a PR.
 * Both unit and E2E integration tests must pass on CI. Please make sure that
   tests are passing with your change (see [Testing](#testing) section).
 
-## Support
+## Reach out to us through
 
-To report any other kind of problem, feel free to open a GitHub Issue or reach
-out to the project maintainers on the ONF Community Slack ([aether-dev](https://app.slack.com/client/T095Z193Q/C01E4HMLBNV)).
+1. #sdcore-dev channel in [Aether Community Slack](https://aether5g-project.slack.com)
+2. Raise Github [issues](https://github.com/omec-project/upf/issues/new)
 
 ## License
 

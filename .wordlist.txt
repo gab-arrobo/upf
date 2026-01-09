@@ -3,17 +3,21 @@
 adaptor
 ADQ
 aether
+aetherproject
 Aether
 allocatable
 AMI
 bb
 bess
+bessctl
 busypoll
 BUIDKIT
 cndp
 CNDP
 CNI
 config
+cpus
+cpuset
 CPUs
 datagrams
 datapath
@@ -44,6 +48,7 @@ enp
 epc
 ethernet
 FARs
+fb
 github
 gNB
 gRPC
@@ -75,6 +80,7 @@ localhost
 lports
 MAKEFLAGS
 md
+memlock
 Microbenchmarks
 Natting
 natting
@@ -90,6 +96,7 @@ ONF
 ONF's
 ONFConnect
 ONOS
+OpenSSF
 pci
 PCI
 PCIe
@@ -102,6 +109,7 @@ PFDs
 pktgen
 protobuf
 PTF
+PWD
 QERs
 qid
 QoS
@@ -123,7 +131,10 @@ sudo
 tc
 TCP
 tcpdump
+td
+TEID
 TRex
+ulimit
 UDP
 UE
 UEs
@@ -176,6 +187,7 @@ nhmacaddrs
 Personalization
 PRIVS
 rf
+sdcore
 sgi
 vdev
 zc

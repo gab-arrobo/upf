@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/omec-project/upf-epc/internal/p4constants"
 	"github.com/omec-project/upf-epc/logger"
 )
 
@@ -20,6 +19,11 @@ type Bits uint8
 // Set Bits.
 func Set(b, flag Bits) Bits { return b | flag }
 
+// UnknownString is the canonical string used to represent unknown values in
+// the pfcpiface package. Using a single constant avoids repeated string
+// literals and satisfies goconst lint checks.
+const UnknownString = "unknown"
+
 // func Clear(b, flag Bits) Bits  { return b &^ flag }
 // func Toggle(b, flag Bits) Bits { return b ^ flag }
 // func Has(b, flag Bits) bool { return b&flag != 0 }
@@ -27,6 +31,13 @@ func Set(b, flag Bits) Bits { return b | flag }
 func setUeipFeature(features ...uint8) {
 	if len(features) >= 3 {
 		features[2] = features[2] | 0x04
+	}
+}
+
+// Set the 5th bit of the first octet to 1.
+func setFTUPFeature(features ...uint8) {
+	if len(features) >= 1 {
+		features[0] = features[0] | 0x10
 	}
 }
 
@@ -54,10 +65,13 @@ func inc(ip net.IP) {
 }
 
 func ip2int(ip net.IP) uint32 {
+	// Guard against IP with insufficient length (need at least 4 bytes for uint32)
+	if len(ip) < 4 {
+		return 0
+	}
 	if len(ip) == 16 {
 		return binary.BigEndian.Uint32(ip[12:16])
 	}
-
 	return binary.BigEndian.Uint32(ip)
 }
 
@@ -71,7 +85,7 @@ func ipMask2int(ip net.IPMask) uint32 {
 
 func hex2int(hexStr string) uint32 {
 	// remove 0x suffix if found in the input string
-	cleaned := strings.Replace(hexStr, "0x", "", -1)
+	cleaned := strings.ReplaceAll(hexStr, "0x", "")
 
 	// base 16 for hexadecimal
 	result, _ := strconv.ParseUint(cleaned, 16, 32)
@@ -129,16 +143,4 @@ func GetUnicastAddressFromInterface(interfaceName string) (net.IP, error) {
 	}
 
 	return ip, nil
-}
-
-func GetSliceTCMeterIndex(sliceID uint8, TC uint8) (int64, error) {
-	if sliceID >= (1 << p4constants.BitwidthMfSliceId) {
-		return 0, ErrInvalidArgumentWithReason("SliceID", sliceID, "Slice ID higher than max supported slice ID")
-	}
-
-	if TC >= (1 << p4constants.BitwidthApTc) {
-		return 0, ErrInvalidArgumentWithReason("TC", TC, "TC higher than max supported Traffic Class")
-	}
-
-	return int64((sliceID << 2) + (TC & 0b11)), nil
 }

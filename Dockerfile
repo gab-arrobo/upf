@@ -3,7 +3,7 @@
 # Copyright 2019-present Intel Corporation
 
 # Stage bess-build: fetch BESS dependencies & pre-reqs
-FROM registry.aetherproject.org/sdcore/bess_build:latest AS bess-build
+FROM registry.aetherproject.org/sdcore/bess_build:251212@sha256:054cbc60635319f545165fe173c47df86f4a82448c3bf5bece3063065c5d70d5 AS bess-build
 ARG CPU=native
 ARG BESS_COMMIT=main
 ENV PLUGINS_DIR=plugins
@@ -53,20 +53,21 @@ RUN PLUGINS=$(find "$PLUGINS_DIR" -mindepth 1 -maxdepth 1 -type d) && \
     cp -r core/pb /pb
 
 # Stage bess: creates the runtime image of BESS
-FROM ubuntu:24.04 AS bess
+FROM ubuntu:22.04@sha256:104ae83764a5119017b8e8d6218fa0832b09df65aae7d5a6de29a85d813da2fb AS bess
 WORKDIR /
 COPY requirements.txt .
 RUN apt-get update && apt-get install -y \
     --no-install-recommends \
     python3-pip \
     libgraph-easy-perl \
+    libgrpc++1 \
     iproute2 \
     iptables \
     iputils-ping \
     tcpdump && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
-    pip install --no-cache-dir --break-system-packages -r requirements.txt
+    pip install --no-cache-dir --require-hashes -r requirements.txt
 COPY --from=bess-build /opt/bess /opt/bess
 COPY --from=bess-build /bin/bessd /bin/bessd
 COPY --from=bess-build /bin/modules /bin/modules
@@ -102,25 +103,30 @@ WORKDIR /opt/bess/bessctl
 ENTRYPOINT ["bessd", "-f"]
 
 # Stage build bess golang pb
-FROM golang:1.23.3-bookworm AS protoc-gen
-RUN go install github.com/golang/protobuf/protoc-gen-go@latest
+FROM golang:1.25.5-bookworm@sha256:2c7c65601b020ee79db4c1a32ebee0bf3d6b298969ec683e24fcbea29305f10e AS protoc-gen
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.10 && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
 
 FROM bess-build AS go-pb
 COPY --from=protoc-gen /go/bin/protoc-gen-go /bin
+COPY --from=protoc-gen /go/bin/protoc-gen-go-grpc /bin
+
 RUN mkdir /bess_pb && \
     protoc -I /usr/include -I /protobuf/ \
     /protobuf/*.proto /protobuf/ports/*.proto \
-    --go_opt=paths=source_relative --go_out=plugins=grpc:/bess_pb
+    --go_opt=paths=source_relative --go_out=/bess_pb \
+    --go-grpc_opt=paths=source_relative --go-grpc_out=/bess_pb
 
 FROM bess-build AS py-pb
-RUN pip install --no-cache-dir grpcio-tools==1.26
+COPY requirements_pb.txt .
+RUN pip install --no-cache-dir --require-hashes -r requirements_pb.txt
 RUN mkdir /bess_pb && \
     python3 -m grpc_tools.protoc -I /usr/include -I /protobuf/ \
     /protobuf/*.proto /protobuf/ports/*.proto \
     --python_out=plugins=grpc:/bess_pb \
     --grpc_python_out=/bess_pb
 
-FROM golang:1.23.3-bookworm AS pfcpiface-build
+FROM golang:1.25.5-bookworm@sha256:2c7c65601b020ee79db4c1a32ebee0bf3d6b298969ec683e24fcbea29305f10e AS pfcpiface-build
 ARG GOFLAGS
 WORKDIR /pfcpiface
 
@@ -131,10 +137,11 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN if echo "$GOFLAGS" | grep -Eq "-mod=vendor"; then go mod download; fi
 
 COPY . /pfcpiface
-RUN CGO_ENABLED=0 go build $GOFLAGS -o /bin/pfcpiface ./cmd/pfcpiface
+RUN go mod tidy && \
+    CGO_ENABLED=0 go build $GOFLAGS -o /bin/pfcpiface ./cmd/pfcpiface
 
 # Stage pfcpiface: runtime image of pfcpiface toward SMF/SPGW-C
-FROM alpine:3.20.3 AS pfcpiface
+FROM alpine:3.23@sha256:865b95f46d98cf867a156fe4a135ad3fe50d2056aa3f25ed31662dff6da4eb62 AS pfcpiface
 COPY conf /opt/bess/bessctl/conf
 COPY --from=pfcpiface-build /bin/pfcpiface /bin
 ENTRYPOINT [ "/bin/pfcpiface" ]

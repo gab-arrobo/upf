@@ -4,7 +4,7 @@
 package pfcpiface
 
 import (
-	"github.com/stretchr/testify/require"
+	"github.com/wmnsk/go-pfcp/ie"
 
 	"net"
 	"reflect"
@@ -62,32 +62,26 @@ func TestGetUnicastAddressFromInterface(t *testing.T) {
 	}
 }
 
-func TestGetSliceTcMeterIndex(t *testing.T) {
-	tests := []struct {
-		name    string
-		TC      uint8
-		sliceID uint8
-		want    int64
-		wantErr bool
-	}{
-		{name: "SliceID=0, TC=0", sliceID: 0, TC: 0, want: 0},
-		{name: "SliceID=3, TC=3", sliceID: 3, TC: 2, want: 14},
-		{name: "SliceID=15, TC=3", sliceID: 15, TC: 3, want: 63},
-		{name: "Big slice ID", sliceID: 16, TC: 3, wantErr: true},
-		{name: "Big Traffic Class", sliceID: 0, TC: 4, wantErr: true},
-	}
+func TestSetUeipFeature(t *testing.T) {
+	features := make([]uint8, 4)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetSliceTCMeterIndex(tt.sliceID, tt.TC)
-			if (err != nil) != tt.wantErr {
-				t.Errorf(
-					"GetSliceTcMeterIndex() error = %v, wantErr %v", err, tt.wantErr,
-				)
-				return
-			}
-			require.Equal(t, tt.want, got)
-		},
-		)
+	setUeipFeature(features...)
+
+	ie := ie.NewUPFunctionFeatures(features...)
+	hasUeIPAlloc := ie.HasUEIP()
+	if !hasUeIPAlloc {
+		t.Errorf("Expected UEIPAlloc to be set")
+	}
+}
+
+func TestSetFTUPFeature(t *testing.T) {
+	features := make([]uint8, 4)
+
+	setFTUPFeature(features...)
+
+	ie := ie.NewUPFunctionFeatures(features...)
+	hasFTUP := ie.HasFTUP()
+	if !hasFTUP {
+		t.Errorf("Expected FTUP to be set")
 	}
 }
