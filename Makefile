@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2020-present Open Networking Foundation
+# SPDX-FileCopyrightText: 2026 Intel Corporation
 
 PROJECT_NAME             := upf
 VERSION                  ?= $(shell cat ./VERSION 2>/dev/null || echo "dev")
@@ -211,7 +212,6 @@ env: ## Print environment variables
         help \
         lint \
         output \
-        output-dir \
         pb \
         print-docker-targets \
         print-version \
